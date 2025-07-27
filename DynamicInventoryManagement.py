@@ -20,22 +20,52 @@ class Product:
     def __lt__(self, other):
         return self.product_id < other.product_id
     
+ # Printing of product objects
+    def __repr__(self):
+        return (f"Product ID: {self.product_id}, Name: {self.name}, "
+                f"Price: {self.price}, Quantity: {self.price}, "
+                f"Category: {self.category})")   
+    
 # Define a class for the inventory which manages products for rapid lookup.
 class Inventory:
     # Initialize the inventory with a dictionary to hold products
     def __init__(self):
         self.products = {}
+        # Secondary index to hold products grouped by categories.
+        self.products_by_category =defaultdict(list)
+
+    # Helper to update category index when product category changes.
+    def _update_product_category(self, product, old_category, new_category):
+        if old_category != new_category:
+            # Remove the old category list
+            if product in self.products_by_category[old_category]:
+                self.products_by_category[old_category].remove(product)
+            
+            # Add new category list
+            self.products_by_category[new_category].append(product)
+            # Removing empty category lists.
+            if not self.products_by_category[old_category]:
+                del self.products_by_category[old_category]
 
     # Add a new product or update an existing product
     def add_product(self, product_id, name, price, quantity, category):
         if product_id in self.products:
             existing_product = self.products[product_id]
+            # Store old category before update.
+            old_category = existing_product.category
+
             existing_product.name = name
             existing_product.price = price
             existing_product.quantity += quantity
             existing_product.category = category
+            # Update category if changed.
+            self._update_product_category(existing_product, old_category, category)
         else:
-            self.products[product_id] = Product(product_id, name, price, quantity, category)
+            new_product = Product(product_id, name, price, quantity, category)
+            self.products[product_id] = new_product
+            # Add to category index
+            self.products_by_category[category].append(new_product)
+        print(f"Product {product_id} has been added/updated.")
     
     # Update the quantity of an existing product
     def update_quantity(self, product_id, quantity):
@@ -43,6 +73,7 @@ class Inventory:
             self.products[product_id].quantity += quantity
             if self.products[product_id].quantity < 0:
                 self.products[product_id].quantity = 0
+            print(f"Quantity for Product ID {product_id} has been updated to {self.products[product_id].quantity}.")
         else:
             print(f"Product ID {product_id} not found in inventory.")
     
@@ -50,6 +81,7 @@ class Inventory:
     def update_price(self, product_id, price):
         if product_id in self.products:
             self.products[product_id].price = price
+            print(f"Price for Product ID {product_id} has been updated to {price}.")
         else:
             print(f"Product ID {product_id} not found in inventory.")
 
@@ -60,13 +92,56 @@ class Inventory:
     # Remove a product from the inventory
     def remove_product(self, product_id):
         if product_id in self.products:
+            product_removal = self.products[product_id]
+            category =product_removal.category
+
+            # Removal from main products dictionary
             del self.products[product_id]
+            # Removal from category index
+            if product_removal in self.products_by_category[category]:
+                self.products_by_category[category].remove(product_removal)
+            # Clean up empty category lists
+            if not self.products_by_category[category]:
+                del self.products_by_category[category]
+            print(f"Product ID {product_id} removed from inventory.")
         else:
             print(f"Product ID {product_id} not found in inventory.")
     
     # List all products in the inventory
     def list_products(self):
         return sorted(self.products.values())
+    
+    #Filter products based on multiple criteria.
+    def filter_products(self, category=None, min_price=None, max_price =None,
+                        min_quantity=None, max_quantity=None, name_keyword=None):
+        # Subset of products if category selected, otherwise all products.
+        if category:
+            candidate = self.products_by_category.get(category, [])
+        else:
+            candidate = list(self.products.values())
+
+        filtered_results = []
+        for product in candidate:
+            # Price filter
+            if min_price is not None and product.price < min_price:
+                continue
+            if max_price is not None and product.price > max_price:
+                continue
+
+            # Quantity filter
+            if min_quantity is not None and product.quantity < min_quantity:
+                continue
+            if max_quantity is not None and product.quantity > max_quantity:
+                continue
+
+            # Name keyword filter (not case sensitive)
+            if name_keyword is not None and name_keyword.lower() not in product.name.lower():
+                continue
+
+            # if all pass, add to results list.
+            filtered_results.append(product)
+        # Results sorted by product id.
+        return sorted(filtered_results)
     
 # Main function to demonstrate the inventory management system, example use cases.
 
@@ -79,33 +154,80 @@ if __name__ == "__main__":
     inventory.add_product(3, "Desk Chair", 389.99, 25, "Chairs")
     inventory.add_product(4, "Desk", 469.99, 20, "Tables")
     inventory.add_product(5, "Bookshelf", 289.99, 15, "Case Goods")
+    inventory.add_product(6, "Adjustable Desk", 559.99, 12, "Tables")
+    inventory.add_product(7, "Bar stool", 749.99, 19, "Chairs")
+    inventory.add_product(8, "Coffee table", 689.99, 14, "Tables")
+    inventory.add_product(9, "One-seater sofa", 899.99, 28, "Lounge")
     
     # Listing products
     print("Initial Inventory:")
     for product in inventory.list_products():
-        print(f"{product.product_id}: {product.name}, Price: {product.price}, Quantity: {product.quantity}, Category: {product.category}")
+        print(product)
     
     # Updating quantity
-    #Example: Selling 2 three-seater sofas
-    inventory.update_quantity(1, -2) 
-    print("\nAfter selling 2 three-seater sofas:")
+    inventory.update_quantity(1, -2) # After selling 2 three-seater sofas
+    inventory.update_quantity(3, 5)   # After adding 5 desk chairs
+    print("\n--After Quantity Updates--")
     for product in inventory.list_products():
-        print(f"{product.product_id}: {product.name}, Price: {product.price}, Quantity: {product.quantity}, Category: {product.category}")
-    
-    # Adding 5 more desk chairs
-    inventory.update_quantity(3, 5)   # Add 5 desk chairs
-    print("\nAfter adding 5 desk chairs to inventory:")
-    for product in inventory.list_products():
-        print(f"{product.product_id}: {product.name}, Price: {product.price}, Quantity: {product.quantity}, Category: {product.category}")
+        print(product)
     
     # Updating price
     inventory.update_price(4, 429.99)  # Discount on desks.
-    print("\nAfter updating desk price:")
+    print("\n--After Price Updates--")
     for product in inventory.list_products():
-        print(f"{product.product_id}: {product.name}, Price: {product.price}, Quantity: {product.quantity}, Category: {product.category}")
+        print(product)
     
     # Removing a product
     inventory.remove_product(5)  # Removing bookshelves.
-    print("\nAfter removing bookshelves:")
+    print("\n--After Removal of Bookshelves--")
     for product in inventory.list_products():
-        print(f"{product.product_id}: {product.name}, Price: {product.price}, Quantity: {product.quantity}, Category: {product.category}")
+        print(product)
+    
+    # Filtering Examples
+    print("\n--Filtering Examples--")
+
+    # Filter by Category: Lounge
+    print("\nProducts in the 'Lounge' category.")
+    lng_products = inventory.filter_products(category="Lounge")
+    for product in lng_products:
+        print(product)
+
+    # Filter by Price Range
+    print("\nProducts with price between $100 and $500:")
+    rng_products = inventory.filter_products(min_price=100, max_price=500)
+    for product in rng_products:
+        print(product)
+
+    #Filter by Quantity Range
+    print("\nProducts with quantity between 10 and 20:")
+    avail_products = inventory.filter_products(min_quantity=10, max_quantity=20)
+    for product in avail_products:
+        print(product)
+
+    # Filter by Name Keyword: Table
+    tbl_products = inventory.filter_products(name_keyword="Table")
+    for product in tbl_products:
+        print(product)   
+
+    # Combined Filters, two criteria.
+    print("\n'Chairs' with price between $200 and $400:")
+    filter_chairs = inventory.filter_products(category="Chairs", min_price=200, max_price=400)
+    for product in filter_chairs:
+        print(product)
+
+        # Combined Filters, three criteria.
+    print("\n'Lounge' with price > $900 and quantity < 25:")
+    filter_lng = inventory.filter_products(category="Lounge", min_price= 900, max_quantity=25)
+    for product in filter_lng:
+        print(product)
+
+    # Testing Category Changes
+    print("\n--Testing Category Change--")
+     # Change category of Desk Chair
+    inventory.add_product(7,"Bar stool", 749.99, 19, "Kitchen Chairs")
+    print("\nProducts in 'Chairs' category after change:")
+    for product in inventory.filter_products(category="Chairs"):
+        print(product)
+    print("\nProducts in 'Kitchen Chairs' category after change:")
+    for product in inventory.filter_products(category="Kitchen Chairs"):
+        print(product)
