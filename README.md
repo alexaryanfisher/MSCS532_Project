@@ -12,6 +12,7 @@ The objective of this project is to demostrate the practical application of fund
 - ```get_product``` : Retrieving product details based on unique product_id.
 - ```remove_product``` : Removing products from inventory.
 - ```list_products``` : Listing all products in inventory.
+- ```filter_products```: Enhanced filtering to allow for multiple criteria.
 
 #### Deliverables:
 ```DynamicInventoryManagement.py``` : Python file containing key functions and example use cases.
