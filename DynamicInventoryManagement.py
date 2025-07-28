@@ -204,9 +204,10 @@ if __name__ == "__main__":
     for product in avail_products:
         print(product)
 
-    # Filter by Name Keyword: Table
-    tbl_products = inventory.filter_products(name_keyword="Table")
-    for product in tbl_products:
+    # Filter by Name Keyword: Chair
+    print("\nProducts with name keyword 'Chair'.")
+    chr_products = inventory.filter_products(name_keyword="Chair")
+    for product in chr_products:
         print(product)   
 
     # Combined Filters, two criteria.
@@ -215,7 +216,7 @@ if __name__ == "__main__":
     for product in filter_chairs:
         print(product)
 
-        # Combined Filters, three criteria.
+    # Combined Filters, three criteria.
     print("\n'Lounge' with price > $900 and quantity < 25:")
     filter_lng = inventory.filter_products(category="Lounge", min_price= 900, max_quantity=25)
     for product in filter_lng:
