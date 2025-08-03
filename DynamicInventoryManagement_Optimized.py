@@ -1,20 +1,31 @@
 """
 Project 1: Data Structure Design and Implementation
-Dynamic Inventory Management System - Original (Reverted back previous implementation to run comparsion testing)
+Dynamic Inventory Management System - Copied and Optimized.
 
-Implementing an inventory management system that can handle dynamic changes in product quantities, prices, and categories.
+Implementing an inventory management system that can handle dynamic changes in product quantities, prices, and categories. Adding optimizations to account for large data sets.
+Changes include using more efficient data structures and adding a performance analysis framework.
 """
-
+## Adding additional packages for performance testing.
+import time
+import random
+import sys
 from collections import defaultdict
+
+# Increase  recursion limit for deep recursion.
+sys.setrecursionlimit(20000)
 
 # Define a class for products in the inventory
 class Product:
     def __init__(self, product_id, name, price, quantity, category):
-        self.product_id = product_id
-        self.name = name
-        self.price = price
-        self.quantity = quantity
-        self.category = category
+        self.data = {
+            'product_id' : product_id,
+            'name' : name,
+            'price' : price,
+            'quantity' : quantity,
+            'category' : category
+        }
+
+        self.product_id =  product_id
 
 # Tie-breaker for sorting products by product_id
     def __lt__(self, other):
@@ -24,7 +35,17 @@ class Product:
     def __repr__(self):
         return (f"Product ID: {self.product_id}, Name: {self.name}, "
                 f"Price: {self.price}, Quantity: {self.price}, "
-                f"Category: {self.category})")   
+                f"Category: {self.category})")
+
+# Enabling Product objects to be used as dictionary keys and in sets.
+    def __hash__(self):
+        return hash(self.product_id)
+    
+# Equality comparsion for Product objects based on product id.
+    def __eq__(self, other):
+        if not isinstance(other, Product):
+            return NotImplemented
+        return self.product_id == other.product_id
     
 # Define a class for the inventory which manages products for rapid lookup.
 class Inventory:
@@ -32,11 +53,11 @@ class Inventory:
     def __init__(self):
         self.products = {}
         # Secondary index to hold products grouped by categories.
-        self.products_by_category =defaultdict(list)
+        self.products_by_category =defaultdict(set) #Changing from list to set for more efficient searching.
 
     # Helper to update category index when product category changes.
-    def _update_product_category(self, product, old_category, new_category):
-        if old_category != new_category:
+    def _update_product_category(self, product_id, old_category, new_category):
+       ''' if old_category != new_category:
             # Remove the old category list
             if product in self.products_by_category[old_category]:
                 self.products_by_category[old_category].remove(product)
@@ -45,11 +66,22 @@ class Inventory:
             self.products_by_category[new_category].append(product)
             # Removing empty category lists.
             if not self.products_by_category[old_category]:
-                del self.products_by_category[old_category]
+                del self.products_by_category[old_category]'''
+       # New optimized helper for updating category index when product category changes.
+       if old_category:
+           # Remove from old category set.
+           self.products_by_category[old_category].discard(product_id)
+           # Removal of category key is set is empty.
+           if not self.products_by_category[old_category]:
+               del self.products_by_category[old_category]
+
+       # Add new category set.
+       if new_category:
+           self.products_by_category[new_category].add(product_id) 
 
     # Add a new product or update an existing product
     def add_product(self, product_id, name, price, quantity, category):
-        if product_id in self.products:
+       ''' if product_id in self.products:
             existing_product = self.products[product_id]
             # Store old category before update.
             old_category = existing_product.category
@@ -65,9 +97,22 @@ class Inventory:
             self.products[product_id] = new_product
             # Add to category index
             self.products_by_category[category].append(new_product)
-        print(f"Product {product_id} has been added/updated.")
-    
-    # Update the quantity of an existing product
+        print(f"Product {product_id} has been added/updated.")'''
+       # New optimized add product function.
+       # Check if new product exists.
+       if product_id in self.products:
+           old_category = self.products[product_id].data['category']
+           new_product = self.products[product_id]
+           new_product.data.update({'name': name, 'price': price, 'quantity': quantity, 'category': category})
+           self._update_product_category(product_id, old_category, category)
+       else:
+           # Adding new product.
+           new_product = Product(product_id, name, price, quantity, category)
+           self.products[product_id] = new_product
+           # Add new product id to category set
+           self.products_by_category[category].add(product_id)
+
+    ''' Update the quantity of an existing product
     def update_quantity(self, product_id, quantity):
         if product_id in self.products:
             self.products[product_id].quantity += quantity
@@ -83,15 +128,15 @@ class Inventory:
             self.products[product_id].price = price
             print(f"Price for Product ID {product_id} has been updated to {price}.")
         else:
-            print(f"Product ID {product_id} not found in inventory.")
+            print(f"Product ID {product_id} not found in inventory.")'''
 
     # Get a product by its ID
     def get_product(self, product_id):
         return self.products.get(product_id, None)
-    
+
     # Remove a product from the inventory
     def remove_product(self, product_id):
-        if product_id in self.products:
+        '''if product_id in self.products:
             product_removal = self.products[product_id]
             category =product_removal.category
 
@@ -105,7 +150,19 @@ class Inventory:
                 del self.products_by_category[category]
             print(f"Product ID {product_id} removed from inventory.")
         else:
-            print(f"Product ID {product_id} not found in inventory.")
+            print(f"Product ID {product_id} not found in inventory.")'''
+       # New optimized removal of products.
+        if product_id in self.products:
+           product = self.products[product_id]
+           category = product.data['category']
+           # Removal of product from dictionary.
+           del self.products[product_id]
+           # Removal of product from secondary category index.
+           self.products_by_category[category].discard(product_id)
+           if not self.products_by_category[category]:
+               del self.products_by_category[category]
+           return True
+        return False
     
     # List all products in the inventory
     def list_products(self):
@@ -115,39 +172,106 @@ class Inventory:
     def filter_products(self, category=None, min_price=None, max_price =None,
                         min_quantity=None, max_quantity=None, name_keyword=None):
         # Subset of products if category selected, otherwise all products.
-        if category:
-            candidate = self.products_by_category.get(category, [])
-        else:
-            candidate = list(self.products.values())
+       filtered_results = []
+       if category and category in self.products_by_category:
+            candidate_ids = self.products_by_category[category]
+            candidate = [self.products[candid] for candid in candidate_ids]
+       else:
+            candidate = self.products.values()
 
-        filtered_results = []
-        for product in candidate:
+       for product in candidate:
+            is_match = True
+
             # Price filter
-            if min_price is not None and product.price < min_price:
-                continue
-            if max_price is not None and product.price > max_price:
-                continue
+            if min_price is not None and product.data['price'] < min_price:
+                is_match = False
+            if max_price is not None and product.data['price'] > max_price:
+                is_match = False
 
             # Quantity filter
-            if min_quantity is not None and product.quantity < min_quantity:
-                continue
-            if max_quantity is not None and product.quantity > max_quantity:
-                continue
+            if min_quantity is not None and product.data['quantity'] < min_quantity:
+                is_match = False
+            if max_quantity is not None and product.data['quantity'] > max_quantity:
+                is_match = False
 
             # Name keyword filter (not case sensitive)
-            if name_keyword is not None and name_keyword.lower() not in product.name.lower():
-                continue
+            if name_keyword is not None and name_keyword.lower() not in product.data['name'].lower():
+                is_match = False
 
-            # if all pass, add to results list.
-            filtered_results.append(product)
+            if is_match:
+                filtered_results.append(product)
+
         # Results sorted by product id.
-        return sorted(filtered_results)
+       return filtered_results
     
-# Main function to demonstrate the inventory management system, example use cases.
+def generate_large_ds(size):
+    inventory = Inventory()
+    categories = ["Lounge", "Chairs", "Tables", "Case Goods"]
+    for i in range(size):
+        product_id = i + 1
+        name = f"Product : {product_id}"
+        price = round(random.uniform(10, 1000), 2)
+        quantity = random.randint(0, 100)
+        category = random.choice(categories)
+        inventory.add_product(product_id, name, price, quantity, category)
+    return inventory
+
+def run_performance_testing():
+    # Performs performance testing on inventory operations on different dataset sizes.
+    print("---Performance Testing---")
+    sizes = [1000, 10000, 50000, 100000]
+
+    for size in sizes:
+        print(f"\n Testing for {size} products.")
+        inventory = generate_large_ds(size)
+
+        # Testing add/update
+        # Getting start time.
+        start_time = time.perf_counter()
+        inventory.add_product(1, "Three-seater Sofa", 1899.99, 10, "Lounge")
+        # Getting end time.
+        end_time = time.perf_counter()
+        # Getting running time in milliseconds.
+        elapsed_time = ((end_time - start_time) * 1000)
+        print(f" Add/Update Product Running Time: {elapsed_time} milliseconds.")
+    
+        # Testing Get Product
+        product_search =  random.randint(1, size)
+        start_time = time.perf_counter()
+        inventory.get_product(product_search)
+        end_time = time.perf_counter()
+        elapsed_time = ((end_time - start_time) * 1000)
+        print(f" Search (Get) Product Running Time: {elapsed_time} milliseconds.")
+
+        # Testing Filter Product with Category
+        category_filter =  random.choice(["Lounge", "Chairs", "Tables", "Case Goods"])
+        start_time = time.perf_counter()
+        inventory.filter_products(category=category_filter)
+        end_time = time.perf_counter()
+        elapsed_time = ((end_time - start_time) * 1000)
+        print(f" Filter by Category '{category_filter}': Running Time: {elapsed_time} milliseconds.")
+
+        # Testing Filter Product with no Category
+        start_time = time.perf_counter()
+        inventory.filter_products(min_price=300, max_quantity=15)
+        end_time = time.perf_counter()
+        elapsed_time = ((end_time - start_time) * 1000)
+        print(f" Filter Product with no Category Running Time: {elapsed_time} milliseconds.")        
+
+        # Testing Removal
+        product_removal = random.randint(1, size)
+        start_time = time.perf_counter()
+        inventory.remove_product(product_removal)
+        end_time = time.perf_counter()
+        elapsed_time = ((end_time - start_time) * 1000)
+        print(f" Removing Product Running Time: {elapsed_time} milliseconds.")
+
+# Main function to demonstrate the inventory management system, perfermance testing.
 
 if __name__ == "__main__":
-    inventory = Inventory()
+    '''inventory = Inventory()
     
+
     # Adding products
     inventory.add_product(1, "Three-seater Sofa", 1899.99, 10, "Lounge")
     inventory.add_product(2, "Two-seater Sofa", 999.99, 20, "Lounge")
@@ -231,4 +355,6 @@ if __name__ == "__main__":
         print(product)
     print("\nProducts in 'Kitchen Chairs' category after change:")
     for product in inventory.filter_products(category="Kitchen Chairs"):
-        print(product)
+        print(product)'''
+    
+    run_performance_testing()
