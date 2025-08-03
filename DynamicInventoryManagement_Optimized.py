@@ -218,7 +218,7 @@ def generate_large_ds(size):
 
 def run_performance_testing():
     # Performs performance testing on inventory operations on different dataset sizes.
-    print("---Performance Testing---")
+    print("---Performance Testing Optimized Version---")
     sizes = [1000, 10000, 50000, 100000]
 
     for size in sizes:

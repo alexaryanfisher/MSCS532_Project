@@ -4,8 +4,14 @@ Dynamic Inventory Management System - Original (Reverted back previous implement
 
 Implementing an inventory management system that can handle dynamic changes in product quantities, prices, and categories.
 """
-
+# Importing additional packages for performance testing.
+import time
+import random
+import sys
 from collections import defaultdict
+
+# Increasing recursion limit.
+sys.setrecursionlimit(20000)
 
 # Define a class for products in the inventory
 class Product:
@@ -65,7 +71,7 @@ class Inventory:
             self.products[product_id] = new_product
             # Add to category index
             self.products_by_category[category].append(new_product)
-        print(f"Product {product_id} has been added/updated.")
+        #print(f"Product {product_id} has been added/updated.")
     
     # Update the quantity of an existing product
     def update_quantity(self, product_id, quantity):
@@ -143,9 +149,70 @@ class Inventory:
         # Results sorted by product id.
         return sorted(filtered_results)
     
+# Adding in Performance Testing to get base comparsion for optimized application
+def performance_testing(sizes):
+    print("\n--Performance Testing Original Version--")
+    for size in sizes:
+        print(f"\nTesting for {size} products.")
+        inventory = Inventory()
+
+        # Adding Products
+        # Start timer.
+        start_timer_adding = time.perf_counter()
+        # Random products.
+        categories = ["Lounge", "Chairs", "Tables", "Case Goods"]
+        for i in range(size):
+            product_id = i + 1
+            name = f"Product : {product_id}"
+            price = round(random.uniform(10, 1000), 2)
+            quantity = random.randint(0, 100)
+            category = f"Category : {random.choice(categories)}"
+            inventory.add_product(product_id, name, price, quantity, category)
+        # End timer.
+        end_timer_adding = time.perf_counter()
+        # Elapsed time in ms.
+        elapsed_add = ((end_timer_adding - start_timer_adding) * 1000)
+        print(f"Adding Product Running Time: {elapsed_add} ms.")
+
+        # Testing Get Product
+        product_search =  random.randint(1, size)
+        start_timer_search = time.perf_counter()
+        inventory.get_product(product_search)
+        end_timer_search = time.perf_counter()
+        elapsed_search = ((end_timer_search - start_timer_search) * 1000)
+        print(f"Search (Get) Product Running Time: {elapsed_search} ms.")
+
+        # Filtering by Category
+        # Start timer.
+        start_timer_filter = time.perf_counter()
+        # Random category.
+        categories = ["Lounge", "Chairs", "Tables", "Case Goods"]
+        test_category = f"Category : {random.choice(categories)}"
+        inventory.filter_products(category=test_category)
+        # End timer.
+        end_timer_filter = time.perf_counter()
+        # Elapsed time in ms.
+        elapsed_filter = ((end_timer_filter - start_timer_filter) * 1000)
+        print(f"Filter by Category '{test_category}': Running Time: {elapsed_filter} ms.")
+
+        # Filtering by Keyword (Without Category)
+        # Testing with Product keyword.
+        test_keyword = "Product"
+        # Start timer.
+        start_timer_keyword = time.perf_counter()
+        inventory.filter_products(name_keyword=test_keyword)
+        # End timer.
+        end_timer_keyword = time.perf_counter()
+        # Elapsed time in ms.
+        elapsed_keyword = ((end_timer_keyword - start_timer_keyword) * 1000)
+        print(f"Filter Product by Keyword (Without Category) '{test_keyword}' Running Time: {elapsed_keyword} ms.")
+
+
+
 # Main function to demonstrate the inventory management system, example use cases.
 
 if __name__ == "__main__":
+    print("Example Use Cases")
     inventory = Inventory()
     
     # Adding products
@@ -232,3 +299,7 @@ if __name__ == "__main__":
     print("\nProducts in 'Kitchen Chairs' category after change:")
     for product in inventory.filter_products(category="Kitchen Chairs"):
         print(product)
+
+    # Run Performance Testuing with different dataset sizes.
+    test_sizes = [1000, 10000, 50000, 100000]
+    performance_testing(test_sizes)
