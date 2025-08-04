@@ -33,9 +33,9 @@ class Product:
     
  # Printing of product objects
     def __repr__(self):
-        return (f"Product ID: {self.product_id}, Name: {self.name}, "
-                f"Price: {self.price}, Quantity: {self.price}, "
-                f"Category: {self.category})")
+        return (f"Product ID: {self.product_id}, Name: {self.data['name']}, "
+                f"Price: {self.data['price']}, Quantity: {self.data['quantity']}, "
+                f"Category: {self.data['category']})")
 
 # Enabling Product objects to be used as dictionary keys and in sets.
     def __hash__(self):
@@ -57,16 +57,6 @@ class Inventory:
 
     # Helper to update category index when product category changes.
     def _update_product_category(self, product_id, old_category, new_category):
-       ''' if old_category != new_category:
-            # Remove the old category list
-            if product in self.products_by_category[old_category]:
-                self.products_by_category[old_category].remove(product)
-            
-            # Add new category list
-            self.products_by_category[new_category].append(product)
-            # Removing empty category lists.
-            if not self.products_by_category[old_category]:
-                del self.products_by_category[old_category]'''
        # New optimized helper for updating category index when product category changes.
        if old_category:
            # Remove from old category set.
@@ -81,23 +71,6 @@ class Inventory:
 
     # Add a new product or update an existing product
     def add_product(self, product_id, name, price, quantity, category):
-       ''' if product_id in self.products:
-            existing_product = self.products[product_id]
-            # Store old category before update.
-            old_category = existing_product.category
-
-            existing_product.name = name
-            existing_product.price = price
-            existing_product.quantity += quantity
-            existing_product.category = category
-            # Update category if changed.
-            self._update_product_category(existing_product, old_category, category)
-        else:
-            new_product = Product(product_id, name, price, quantity, category)
-            self.products[product_id] = new_product
-            # Add to category index
-            self.products_by_category[category].append(new_product)
-        print(f"Product {product_id} has been added/updated.")'''
        # New optimized add product function.
        # Check if new product exists.
        if product_id in self.products:
@@ -112,45 +85,12 @@ class Inventory:
            # Add new product id to category set
            self.products_by_category[category].add(product_id)
 
-    ''' Update the quantity of an existing product
-    def update_quantity(self, product_id, quantity):
-        if product_id in self.products:
-            self.products[product_id].quantity += quantity
-            if self.products[product_id].quantity < 0:
-                self.products[product_id].quantity = 0
-            print(f"Quantity for Product ID {product_id} has been updated to {self.products[product_id].quantity}.")
-        else:
-            print(f"Product ID {product_id} not found in inventory.")
-    
-    # Update the price of an existing product
-    def update_price(self, product_id, price):
-        if product_id in self.products:
-            self.products[product_id].price = price
-            print(f"Price for Product ID {product_id} has been updated to {price}.")
-        else:
-            print(f"Product ID {product_id} not found in inventory.")'''
-
     # Get a product by its ID
     def get_product(self, product_id):
         return self.products.get(product_id, None)
 
     # Remove a product from the inventory
     def remove_product(self, product_id):
-        '''if product_id in self.products:
-            product_removal = self.products[product_id]
-            category =product_removal.category
-
-            # Removal from main products dictionary
-            del self.products[product_id]
-            # Removal from category index
-            if product_removal in self.products_by_category[category]:
-                self.products_by_category[category].remove(product_removal)
-            # Clean up empty category lists
-            if not self.products_by_category[category]:
-                del self.products_by_category[category]
-            print(f"Product ID {product_id} removed from inventory.")
-        else:
-            print(f"Product ID {product_id} not found in inventory.")'''
        # New optimized removal of products.
         if product_id in self.products:
            product = self.products[product_id]
@@ -203,7 +143,8 @@ class Inventory:
 
         # Results sorted by product id.
        return filtered_results
-    
+
+# Generate a large dataset for testing.    
 def generate_large_ds(size):
     inventory = Inventory()
     categories = ["Lounge", "Chairs", "Tables", "Case Goods"]
@@ -266,95 +207,154 @@ def run_performance_testing():
         elapsed_time = ((end_time - start_time) * 1000)
         print(f" Removing Product Running Time: {elapsed_time} milliseconds.")
 
+# Advanced Testing and Validation
+def run_advance_testing():
+    print("---Advanced Testing and Validation---")
+    print("\n---Use Cases---")
+    inventory = Inventory()
+
+    # Add new product.
+    print("Test Case 1: Adding a new product.")
+    inventory.add_product(101, "Planter", 3200.00, 50, "Case Goods")
+    product = inventory.get_product(101)
+    assert product is not None and product.data['name'] == "Planter", "Test Case 1 Failed: Product not added correctly."
+    assert "Case Goods" in inventory.products_by_category and 101 in inventory.products_by_category["Case Goods"], "Test Case 1 Failed: Category index not updated."
+    print("Test Case 1 Passed.")
+
+    # Update existing product's attributes
+    print("Test Case 2: Updating an existing product.")
+    inventory.add_product(101, "Single Planter", 3400.00, 50, "Case Goods")
+    product = inventory.get_product(101)
+    assert product.data['name'] == "Single Planter" and product.data['price'] == 3400.00, "Test Case 2 Failed: Product not updated correctly."
+    print("Test Case 2 Passed.")
+
+    # Update product category
+    print("Test Case 3: Updating product category.")
+    inventory.add_product(101, "Single Planter", 3400.00, 50, "Decor")
+    assert "Case Goods" not in inventory.products_by_category or 101 not in inventory.products_by_category["Case Goods"], "Test Case 3 Failed: Old category not cleared."
+    assert "Decor" in inventory.products_by_category and 101 in inventory.products_by_category["Decor"], "Test Case 3 Failed: New category not updated."
+    print("Test Case 3 Passed.")
+
+    # Test Case 4: Remove a product
+    print("Test Case 4: Removing a product.")
+    inventory.remove_product(101)
+    assert inventory.get_product(101) is None, "Test Case 4 Failed: Product not removed."
+    assert "Decor" not in inventory.products_by_category or 101 not in inventory.products_by_category["Decor"], "Test Case 4 Failed: Product not removed from category index."
+    print("Test Case 4 Passed.")
+
+    # Test Case 5: Filter products with multiple criteria
+    print("Test Case 5: Filtering products.")
+    inventory.add_product(201, "Conference Swivel Chair", 259.99, 100, "Chairs")
+    inventory.add_product(202, "Conference Fixed Chair", 279.99, 75, "Chairs")
+    inventory.add_product(203, "Accent Chaise", 2469.99, 21, "Lounge")
+    
+    filtered = inventory.filter_products(category="Chairs", min_price=260)
+    assert len(filtered) == 1 and filtered[0].product_id == 202, "Test Case 5 Failed: Filter by category and price."
+    
+    filtered_keyword = inventory.filter_products(name_keyword="Chaise")
+    assert len(filtered_keyword) == 1 and filtered_keyword[0].product_id == 203, "Test Case 5 Failed: Filter by name keyword."
+    print("Test Case 5 Passed.")
+
+# Stress Testing
+    print("--Stress Testing--")
+    # Larger Size for stress testing.
+    stress_size = 200000  
+    print(f"Performing stress test with {stress_size} operations.")
+    stress_inventory = Inventory()
+    start_timer_stress = time.perf_counter()
+
+    # Adding random products in the larger qty.
+    for i in range(stress_size):
+        product_id = i + 1
+        name = f"StressProduct: {product_id}"
+        price = random.uniform(1, 1000)
+        quantity = random.randint(1, 100)
+        category = random.choice(["Lounge", "Chairs", "Tables", "Case Goods"])
+        stress_inventory.add_product(product_id, name, price, quantity, category)
+    
+    # Perform random operations on the large dataset
+    for _ in range(stress_size // 2):
+        oper_type = random.choice(["add", "get", "remove", "filter"])
+        product_id = random.randint(1, stress_size)
+
+        if oper_type == "add":
+            stress_inventory.add_product(product_id, f"UpdatedStressProduct_{product_id}", random.uniform(1, 1000), random.randint(1, 100), random.choice(["Lounge", "Chairs", "Tables", "Case Goods"]))
+        elif oper_type == "get":
+            stress_inventory.get_product(product_id)
+        elif oper_type == "remove":
+            stress_inventory.remove_product(product_id)
+        elif oper_type == "filter":
+            stress_inventory.filter_products(category=random.choice(["Lounge", "Chairs", "Tables", "Case Goods"]), min_price=random.uniform(1, 500))
+
+    end_timer_stress = time.perf_counter()
+    elapsed_stress = ((end_timer_stress - start_timer_stress) * 1000)
+    print(f"Stress test completed in {elapsed_stress} milliseconds.")
+    
+    # Basic check for consistency after stress test
+    print(f"Final number of products after stress test: {len(stress_inventory.products)}")
+    assert len(stress_inventory.products) <= stress_size, "Stress Test Failed: Product count inconsistency."
+
+    # Test with unexpected inputs
+    print("\n--Unexpected Input--")
+    # Getting a non-existent product
+    non_existent_product = inventory.get_product(99999)
+    assert non_existent_product is None, "Unexpected Input Test Failed: Getting non-existent product should return None."
+    print("Non-existent product retrieval handled correctly.")
+
+    # Removing a non-existent product
+    remove_result = inventory.remove_product(99999)
+    assert remove_result is False, "Unexpected Input Test Failed: Removing non-existent product should return False."
+    print("Non-existent product removal handled correctly.")
+
+
+    # --- Scalability Validation ---
+    print("\n--Scalability Validation--")
+    # This section analyzes how performance scales with increasing dataset size.
+    scalability_sizes = [1000, 10000, 50000, 100000, 200000] 
+
+    for size in scalability_sizes:
+        print(f"\nValidating scalability for dataset size: {size} products.")
+        
+        # Data generation
+        start_timer_scale = time.perf_counter()
+        scalable_inventory = generate_large_ds(size)
+        end_timer_scale = time.perf_counter()
+        elapsed_scale = ((end_timer_scale - start_timer_scale) * 1000)
+        print(f"Dataset generation ({size} products) Running Time: {elapsed_scale} ms")
+
+        # Test add/update operation
+        start_timer_add = time.perf_counter()
+        scalable_inventory.add_product(size + 1, "New Scaled Product", 99.99, 10, "Test Category")
+        end_timer_add = time.perf_counter()
+        elapsed_add = ((end_timer_add - start_timer_add) * 1000)
+        print(f"Add/Update Product Running Time: {elapsed_add} ms")
+
+        # Test get operation
+        product_search = random.randint(1, size)
+        start_timer_get = time.perf_counter()
+        scalable_inventory.get_product(product_search)
+        end_timer_get = time.perf_counter()
+        elapsed_get = ((end_timer_get - start_timer_get) * 1000)
+        print(f"Get Product Running Time: {elapsed_get} ms")
+
+        # Test filter operation (by category)
+        category_filtered = random.choice(["Lounge", "Chairs", "Tables", "Case Goods"])
+        start_timer_filter = time.perf_counter()
+        scalable_inventory.filter_products(category=category_filtered)
+        end_timer_filter = time.perf_counter()
+        elapsed_filter = ((end_timer_filter - start_timer_filter) * 1000)
+        print(f"Filter by Category '{category_filtered}' Running Time: {elapsed_filter} ms")
+
+        # Test remove operation
+        product_remove = random.randint(1, size)
+        start_timer_remove = time.perf_counter()
+        scalable_inventory.remove_product(product_remove)
+        end_timer_remove = time.perf_counter()
+        elapsed_remove = ((end_timer_remove - start_timer_remove) * 1000)
+        print(f"Remove Product Running Time: {elapsed_remove} ms")
+
 # Main function to demonstrate the inventory management system, perfermance testing.
 
 if __name__ == "__main__":
-    '''inventory = Inventory()
-    
-
-    # Adding products
-    inventory.add_product(1, "Three-seater Sofa", 1899.99, 10, "Lounge")
-    inventory.add_product(2, "Two-seater Sofa", 999.99, 20, "Lounge")
-    inventory.add_product(3, "Desk Chair", 389.99, 25, "Chairs")
-    inventory.add_product(4, "Desk", 469.99, 20, "Tables")
-    inventory.add_product(5, "Bookshelf", 289.99, 15, "Case Goods")
-    inventory.add_product(6, "Adjustable Desk", 559.99, 12, "Tables")
-    inventory.add_product(7, "Bar stool", 749.99, 19, "Chairs")
-    inventory.add_product(8, "Coffee table", 689.99, 14, "Tables")
-    inventory.add_product(9, "One-seater sofa", 899.99, 28, "Lounge")
-    
-    # Listing products
-    print("Initial Inventory:")
-    for product in inventory.list_products():
-        print(product)
-    
-    # Updating quantity
-    inventory.update_quantity(1, -2) # After selling 2 three-seater sofas
-    inventory.update_quantity(3, 5)   # After adding 5 desk chairs
-    print("\n--After Quantity Updates--")
-    for product in inventory.list_products():
-        print(product)
-    
-    # Updating price
-    inventory.update_price(4, 429.99)  # Discount on desks.
-    print("\n--After Price Updates--")
-    for product in inventory.list_products():
-        print(product)
-    
-    # Removing a product
-    inventory.remove_product(5)  # Removing bookshelves.
-    print("\n--After Removal of Bookshelves--")
-    for product in inventory.list_products():
-        print(product)
-    
-    # Filtering Examples
-    print("\n--Filtering Examples--")
-
-    # Filter by Category: Lounge
-    print("\nProducts in the 'Lounge' category.")
-    lng_products = inventory.filter_products(category="Lounge")
-    for product in lng_products:
-        print(product)
-
-    # Filter by Price Range
-    print("\nProducts with price between $100 and $500:")
-    rng_products = inventory.filter_products(min_price=100, max_price=500)
-    for product in rng_products:
-        print(product)
-
-    #Filter by Quantity Range
-    print("\nProducts with quantity between 10 and 20:")
-    avail_products = inventory.filter_products(min_quantity=10, max_quantity=20)
-    for product in avail_products:
-        print(product)
-
-    # Filter by Name Keyword: Chair
-    print("\nProducts with name keyword 'Chair'.")
-    chr_products = inventory.filter_products(name_keyword="Chair")
-    for product in chr_products:
-        print(product)   
-
-    # Combined Filters, two criteria.
-    print("\n'Chairs' with price between $200 and $400:")
-    filter_chairs = inventory.filter_products(category="Chairs", min_price=200, max_price=400)
-    for product in filter_chairs:
-        print(product)
-
-    # Combined Filters, three criteria.
-    print("\n'Lounge' with price > $900 and quantity < 25:")
-    filter_lng = inventory.filter_products(category="Lounge", min_price= 900, max_quantity=25)
-    for product in filter_lng:
-        print(product)
-
-    # Testing Category Changes
-    print("\n--Testing Category Change--")
-     # Change category of Desk Chair
-    inventory.add_product(7,"Bar stool", 749.99, 19, "Kitchen Chairs")
-    print("\nProducts in 'Chairs' category after change:")
-    for product in inventory.filter_products(category="Chairs"):
-        print(product)
-    print("\nProducts in 'Kitchen Chairs' category after change:")
-    for product in inventory.filter_products(category="Kitchen Chairs"):
-        print(product)'''
-    
-    run_performance_testing()
+     run_performance_testing()
+     run_advance_testing()

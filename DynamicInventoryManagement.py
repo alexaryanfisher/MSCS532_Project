@@ -29,7 +29,7 @@ class Product:
  # Printing of product objects
     def __repr__(self):
         return (f"Product ID: {self.product_id}, Name: {self.name}, "
-                f"Price: {self.price}, Quantity: {self.price}, "
+                f"Price: {self.price}, Quantity: {self.quantity}, "
                 f"Category: {self.category})")   
     
 # Define a class for the inventory which manages products for rapid lookup.
