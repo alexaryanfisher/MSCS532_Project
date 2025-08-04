@@ -16,9 +16,11 @@ The objective of this project is to demostrate the practical application of fund
 
 #### Deliverables:
 ```DynamicInventoryManagement.py``` : Python file containing key functions and example use cases.
+```DynamicInventoryManagement_Optimized.py``` : Python file optimized application, advanced testing, and stress testing.
+
 
 ##### How to Run:
-* Save the Python file.
+* Save the Python files.
 * Open terminal or preferred IDE
 * Navigate and open the saved file
 * Run the script using your Python interpreter.
